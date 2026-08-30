@@ -372,6 +372,29 @@ button:focus-visible, input:focus-visible, select:focus-visible, [tabindex]:focu
   *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
 }
 
+/* Supabase authentication and live-data states */
+.loading-screen { min-height:100vh; display:grid; place-items:center; align-content:center; gap:16px; text-align:center; background:radial-gradient(circle at 50% 35%,#f5fbfc,#edf3f7); color:var(--ink); }
+.loading-screen .ps-brand { min-height:0; margin-bottom:8px; }
+.loading-screen .ps-logo { width:min(290px,68vw); }
+.loading-screen h1 { font-family:Alexandria,sans-serif; font-size:1.25rem; margin:0; }
+.loading-screen p { color:var(--ink-2); margin:0; }
+.loading-ring { width:34px; height:34px; border:3px solid #dce9ee; border-top-color:var(--aqua); border-radius:50%; animation:auth-spin .8s linear infinite; }
+@keyframes auth-spin { to { transform:rotate(360deg); } }
+.auth-tabs { display:grid; grid-template-columns:1fr 1fr; gap:6px; padding:5px; margin:24px 0 20px; border-radius:14px; background:#eef3f6; }
+.auth-tabs button { border:0; background:transparent; color:var(--ink-2); padding:11px 12px; border-radius:10px; font-family:inherit; font-weight:700; cursor:pointer; }
+.auth-tabs button.active { background:white; color:var(--blue-deep); box-shadow:0 5px 16px rgba(22,59,92,.1); }
+.auth-form { display:grid; gap:14px; }
+.auth-form .field { gap:7px; }
+.auth-submit { width:100%; justify-content:center; margin-top:4px; min-height:48px; }
+.auth-message { padding:11px 13px; border-radius:11px; background:#fff4dc; border:1px solid #f0d8a4; color:#75531d; font-size:.83rem; line-height:1.6; }
+.setup-alert { margin-top:22px; padding:20px; border-radius:18px; background:#fff8e9; border:1px solid #ecd8ac; color:#5e461a; line-height:1.7; }
+.setup-alert strong { display:block; font-family:Alexandria,sans-serif; color:#49340f; }
+.setup-alert p { margin:7px 0; }
+.setup-alert code { direction:ltr; display:inline-block; color:#173f67; }
+.setup-alert .btn { margin-top:10px; }
+.data-warning { margin-bottom:18px; padding:12px 15px; border-radius:13px; background:#fff4dc; border:1px solid #f0d8a4; color:#75531d; }
+
+
 /* Perfect Scan center portal */
 .ps-brand { align-items: center; min-height: 72px; }
 .ps-logo { display:block; width:min(195px,100%); height:auto; object-fit:contain; filter:drop-shadow(0 5px 12px rgba(0,0,0,.08)); }
