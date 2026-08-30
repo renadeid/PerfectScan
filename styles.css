@@ -393,6 +393,10 @@ button:focus-visible, input:focus-visible, select:focus-visible, [tabindex]:focu
 .setup-alert code { direction:ltr; display:inline-block; color:#173f67; }
 .setup-alert .btn { margin-top:10px; }
 .data-warning { margin-bottom:18px; padding:12px 15px; border-radius:13px; background:#fff4dc; border:1px solid #f0d8a4; color:#75531d; }
+.credential-note { grid-column:1/-1; padding:12px 14px; border-radius:12px; background:var(--aqua-soft); color:#176d62; font-size:.82rem; line-height:1.7; margin-top:12px; }
+.credential-box { display:grid; gap:10px; width:min(480px,100%); margin:20px auto 0; padding:16px; border:1px dashed #9cb9cb; border-radius:15px; background:#f7fafc; text-align:right; }
+.credential-box span { display:grid; gap:4px; color:var(--ink-2); font-size:.78rem; }
+.credential-box strong { color:var(--blue-deep); font-family:ui-monospace,SFMono-Regular,Consolas,monospace; font-size:.9rem; user-select:all; }
 
 
 /* Perfect Scan center portal */

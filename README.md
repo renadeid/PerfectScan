@@ -35,6 +35,7 @@
 - Supabase Auth لتسجيل الدخول وإنشاء حسابات المرضى.
 - Postgres + Row Level Security لعزل بيانات كل مريض.
 - Private Storage لحفظ تقارير PDF والصور.
+- Edge Function آمنة ليتمكن الـAdmin من إنشاء حساب مريض بكلمة مرور مؤقتة.
 - Publishable key فقط داخل المتصفح؛ لا توجد Secret keys في المشروع.
 
 ## تنبيه

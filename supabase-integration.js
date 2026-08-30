@@ -18,7 +18,8 @@
     loading: true,
     busy: false,
     authMessage: "",
-    dataError: ""
+    dataError: "",
+    mustChangePassword: false
   });
   localStorage.removeItem("perfectscan-role");
   localStorage.removeItem("perfectscan-appointments");
@@ -100,6 +101,10 @@
     return `<main class="loading-screen">${brand()}<span class="loading-ring"></span><h1>جاري تجهيز بوابة Perfect Scan</h1><p>يتم الاتصال بحسابك بشكل آمن...</p></main>`;
   }
 
+  function passwordChangeView() {
+    return `<main class="entry ps-entry"><section class="entry-brand ps-entry-brand">${brand()}<div class="entry-copy"><span class="eyebrow" style="color:#8ee7d9">حماية حساب المريض</span><h1>كلمة مرورك،<br><em>خاصة بيك وحدك.</em></h1><p>الإدارة أنشأت الحساب بكلمة مرور مؤقتة. اختاري كلمة مرور جديدة قبل فتح ملفك الطبي.</p></div><div class="entry-scan-orbit" aria-hidden="true"><span></span><i></i></div><div class="privacy-note">${ICONS.file}<span>لن يستطيع موظف المركز معرفة كلمة المرور الجديدة</span></div></section><section class="entry-panel"><div class="login-box"><span class="eyebrow">أول تسجيل دخول</span><h2>غيّري كلمة المرور المؤقتة</h2><p class="muted">استخدمي 10 أحرف على الأقل، ويفضل أرقام ورموز.</p><form class="auth-form" id="change-password-form"><div class="field"><label>كلمة المرور الجديدة</label><input name="password" type="password" minlength="10" required autocomplete="new-password"></div><div class="field"><label>تأكيد كلمة المرور</label><input name="password_confirm" type="password" minlength="10" required autocomplete="new-password"></div>${state.authMessage ? `<div class="auth-message">${escapeHTML(state.authMessage)}</div>` : ""}<button class="btn btn-primary auth-submit" ${state.busy ? "disabled" : ""}>${state.busy ? "جاري الحفظ..." : "حفظ وفتح حسابي"}</button></form></div></section></main>`;
+  }
+
   roleEntry = function () {
     if (state.loading) return loadingView();
     const register = state.authMode === "register";
@@ -152,8 +157,45 @@
 
   patientsPage = function () {
     const rows = state.patients.map(p => `<tr><td><div class="table-person"><span class="mini-avatar">${escapeHTML((p.full_name || "م")[0])}</span><strong>${escapeHTML(p.full_name || "بدون اسم")}</strong></div></td><td class="num">${patientCode(p)}</td><td class="num">${escapeHTML(p.phone || "—")}</td><td>${escapeHTML(p.email || "—")}</td><td>${new Intl.DateTimeFormat("ar-EG").format(new Date(p.created_at))}</td></tr>`).join("");
-    return `<div class="section-head"><div><h2>ملفات المرضى</h2><p>الحسابات المسجلة فعليًا في بوابة Perfect Scan.</p></div></div><div class="card table-card"><div class="table-tools"><input class="mini-search" placeholder="ابحث بالاسم أو الرقم..."><span class="muted">${state.patients.length} مريض</span></div><table class="data-table"><thead><tr><th>المريض</th><th>Patient ID</th><th>الموبايل</th><th>البريد</th><th>تاريخ التسجيل</th></tr></thead><tbody>${rows || `<tr><td colspan="5">لا توجد حسابات مرضى بعد.</td></tr>`}</tbody></table></div>`;
+    return `<div class="section-head"><div><h2>ملفات المرضى</h2><p>الحسابات المسجلة فعليًا في بوابة Perfect Scan.</p></div><button class="btn btn-primary" id="new-patient">+ مريض جديد</button></div><div class="card table-card"><div class="table-tools"><input class="mini-search" placeholder="ابحث بالاسم أو الرقم..."><span class="muted">${state.patients.length} مريض</span></div><table class="data-table"><thead><tr><th>المريض</th><th>Patient ID</th><th>الموبايل</th><th>البريد</th><th>تاريخ التسجيل</th></tr></thead><tbody>${rows || `<tr><td colspan="5">لا توجد حسابات مرضى بعد.</td></tr>`}</tbody></table></div>`;
   };
+
+  function patientCreationModal() {
+    const temporaryPassword = `Ps!${crypto.randomUUID().replaceAll("-", "").slice(0, 8)}A7`;
+    document.body.insertAdjacentHTML("beforeend", `<div class="modal-backdrop" id="modal"><div class="modal booking-modal" role="dialog" aria-modal="true"><div class="modal-head"><div><span class="eyebrow">إدارة حسابات المرضى</span><h2>إنشاء حساب مريض جديد</h2></div><button class="close-btn close-modal">×</button></div><form id="create-patient-form"><div class="modal-body"><div class="form-grid"><div class="field"><label>اسم المريض بالكامل</label><input name="full_name" required minlength="3" autocomplete="off"></div><div class="field"><label>رقم الموبايل</label><input name="phone" required inputmode="tel" autocomplete="off" placeholder="01xxxxxxxxx"></div><div class="field"><label>البريد الإلكتروني</label><input name="email" required type="email" autocomplete="off" placeholder="patient@example.com"></div><div class="field"><label>كلمة مرور مؤقتة</label><input name="password" required type="text" minlength="10" value="${temporaryPassword}" dir="ltr"></div></div><div class="credential-note">المريض هيدخل بالكلمة المؤقتة مرة واحدة، وبعدها النظام هيطلب منه اختيار كلمة مرور جديدة.</div></div><div class="modal-foot"><button type="button" class="btn btn-ghost close-modal">إلغاء</button><button class="btn btn-primary">إنشاء حساب المريض</button></div></form></div></div>`);
+    document.querySelectorAll(".close-modal").forEach(button => button.onclick = closeModal);
+    document.getElementById("create-patient-form").onsubmit = createPatientAccount;
+  }
+
+  async function createPatientAccount(event) {
+    event.preventDefault();
+    const formElement = event.currentTarget;
+    const form = new FormData(formElement);
+    const submit = formElement.querySelector(".btn-primary");
+    const credentials = {
+      full_name: form.get("full_name"),
+      phone: form.get("phone"),
+      email: form.get("email"),
+      password: form.get("password")
+    };
+    submit.disabled = true;
+    submit.textContent = "جاري إنشاء الحساب...";
+    const { data, error } = await client.functions.invoke("create-patient", { body: credentials });
+    if (error || data?.error) {
+      let message = data?.error || error?.message || "تعذر إنشاء الحساب";
+      try {
+        const details = await error?.context?.json();
+        message = details?.error || message;
+      } catch { /* keep the available message */ }
+      submit.disabled = false;
+      submit.textContent = "إنشاء حساب المريض";
+      return toast(message);
+    }
+    state.patients.unshift(data.patient);
+    document.querySelector("#modal .modal-body").innerHTML = `<div class="success-message"><div class="success-check">✓</div><h3>تم إنشاء حساب ${escapeHTML(credentials.full_name)}</h3><p class="muted">سلّمي بيانات الدخول للمريض بطريقة آمنة. سيُطلب منه تغيير كلمة المرور عند أول دخول.</p><div class="credential-box"><span>البريد الإلكتروني<strong dir="ltr">${escapeHTML(credentials.email)}</strong></span><span>كلمة المرور المؤقتة<strong dir="ltr">${escapeHTML(credentials.password)}</strong></span></div></div>`;
+    document.querySelector("#modal .modal-foot").innerHTML = `<button type="button" class="btn btn-primary close-modal">تم، إغلاق</button>`;
+    document.querySelector("#modal .close-modal").onclick = () => { closeModal(); render(); };
+  }
 
   adminAppointments = function () {
     const rows = state.appointments.map(a => { const p = state.patients.find(x => x.id === a.patientId); return `<tr><td class="num">#${a.bookingNo}</td><td><strong>${escapeHTML(p?.full_name || "مريض")}</strong></td><td>${escapeHTML(a.service)}</td><td>${escapeHTML(a.branch)}</td><td>${escapeHTML(a.dateLabel)} · ${escapeHTML(a.time)}</td><td><span class="pill ${a.rawStatus === "confirmed" ? "success" : ""}">${escapeHTML(a.status)}</span></td></tr>`; }).join("");
@@ -362,6 +404,7 @@
 
   async function hydrate(session) {
     state.session = session;
+    state.mustChangePassword = session.user?.user_metadata?.must_change_password === true;
     state.loading = true;
     render();
     await loadData();
@@ -371,7 +414,7 @@
 
   async function logout() {
     await client.auth.signOut();
-    Object.assign(state, { session: null, profile: null, role: null, appointments: [], reports: [], patients: [], page: "home", dataError: "", loading: false });
+    Object.assign(state, { session: null, profile: null, role: null, appointments: [], reports: [], patients: [], page: "home", dataError: "", loading: false, mustChangePassword: false });
     render();
   }
 
@@ -390,6 +433,30 @@
     render();
   }
 
+  async function changeTemporaryPassword(event) {
+    event.preventDefault();
+    const form = new FormData(event.currentTarget);
+    const password = form.get("password");
+    if (password !== form.get("password_confirm")) {
+      state.authMessage = "كلمتا المرور غير متطابقتين.";
+      return render();
+    }
+    state.busy = true;
+    state.authMessage = "";
+    render();
+    const metadata = { ...(state.session.user.user_metadata || {}), must_change_password: false };
+    const { data, error } = await client.auth.updateUser({ password, data: metadata });
+    state.busy = false;
+    if (error) {
+      state.authMessage = authErrorMessage(error);
+      return render();
+    }
+    state.session.user = data.user;
+    state.mustChangePassword = false;
+    toast("تم تغيير كلمة المرور بنجاح");
+    render();
+  }
+
   bindEvents = function () {
     document.querySelectorAll("[data-auth-mode]").forEach(button => button.onclick = () => {
       state.authMode = button.dataset.authMode;
@@ -397,6 +464,7 @@
       render();
     });
     document.getElementById("auth-form")?.addEventListener("submit", handleAuth);
+    document.getElementById("change-password-form")?.addEventListener("submit", changeTemporaryPassword);
     document.getElementById("logout-button")?.addEventListener("click", logout);
     document.querySelectorAll("[data-page]").forEach(button => button.onclick = () => { state.page = button.dataset.page; render(); window.scrollTo(0, 0); });
     document.querySelectorAll("[data-open-booking]").forEach(button => button.onclick = () => openBooking());
@@ -414,11 +482,12 @@
     document.getElementById("menu-toggle")?.addEventListener("click", () => document.getElementById("sidebar").classList.toggle("open"));
     document.getElementById("profile-form")?.addEventListener("submit", saveProfile);
     document.getElementById("new-report")?.addEventListener("click", reportUploadModal);
+    document.getElementById("new-patient")?.addEventListener("click", patientCreationModal);
     document.getElementById("settings-form")?.addEventListener("submit", event => { event.preventDefault(); toast("إعدادات العرض فقط في النسخة الحالية"); });
   };
 
   render = function () {
-    app.innerHTML = state.loading ? loadingView() : state.role ? shell() : roleEntry();
+    app.innerHTML = state.loading ? loadingView() : state.mustChangePassword ? passwordChangeView() : state.role ? shell() : roleEntry();
     bindEvents();
   };
 

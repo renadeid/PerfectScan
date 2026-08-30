@@ -1,5 +1,5 @@
 .firecrawl/
 tmp/
+supabase/.temp/
 .DS_Store
 Thumbs.db
-
