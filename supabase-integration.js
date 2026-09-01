@@ -6,6 +6,7 @@
   const client = config && window.supabase
     ? window.supabase.createClient(config.url, config.publishableKey)
     : null;
+  const portalType = document.body.dataset.portal === "admin" ? "admin" : "patient";
 
   Object.assign(state, {
     role: null,
@@ -14,7 +15,6 @@
     reports: [],
     patients: [],
     appointments: [],
-    authMode: "login",
     loading: true,
     busy: false,
     authMessage: "",
@@ -107,21 +107,19 @@
 
   roleEntry = function () {
     if (state.loading) return loadingView();
-    const register = state.authMode === "register";
     const setupError = state.session && state.dataError;
+    const isAdminPortal = portalType === "admin";
     const form = setupError
       ? `<div class="setup-alert"><strong>الحساب اتسجل، لكن قاعدة البيانات لسه مش متجهزة.</strong><p>${escapeHTML(state.dataError)}</p><p>شغّلي ملف <code>supabase/schema.sql</code> كاملًا من SQL Editor، وبعدها اعملي تحديث للصفحة.</p><button class="btn btn-ghost" id="logout-button">تسجيل الخروج</button></div>`
-      : `<div class="auth-tabs"><button class="${!register ? "active" : ""}" data-auth-mode="login">تسجيل الدخول</button><button class="${register ? "active" : ""}" data-auth-mode="register">حساب مريض جديد</button></div>
-        <form class="auth-form" id="auth-form">
-          ${register ? `<div class="field"><label for="full-name">اسم المريض بالكامل</label><input id="full-name" name="full_name" required autocomplete="name" placeholder="الاسم رباعي"></div><div class="field"><label for="phone">رقم الموبايل</label><input id="phone" name="phone" required inputmode="tel" autocomplete="tel" placeholder="01xxxxxxxxx"></div>` : ""}
+      : `<form class="auth-form" id="auth-form">
           <div class="field"><label for="email">البريد الإلكتروني</label><input id="email" name="email" required type="email" autocomplete="email" placeholder="name@example.com"></div>
-          <div class="field"><label for="password">كلمة المرور</label><input id="password" name="password" required type="password" minlength="8" autocomplete="${register ? "new-password" : "current-password"}" placeholder="8 أحرف على الأقل"></div>
+          <div class="field"><label for="password">كلمة المرور</label><input id="password" name="password" required type="password" minlength="8" autocomplete="current-password" placeholder="كلمة المرور"></div>
           ${state.authMessage ? `<div class="auth-message">${escapeHTML(state.authMessage)}</div>` : ""}
-          <button class="btn btn-primary auth-submit" ${state.busy ? "disabled" : ""}>${state.busy ? "جاري التنفيذ..." : register ? "إنشاء حساب المريض" : "دخول آمن"}</button>
+          <button class="btn btn-primary auth-submit" ${state.busy ? "disabled" : ""}>${state.busy ? "جاري تسجيل الدخول..." : "دخول آمن"}</button>
         </form>
-        <div class="login-hint">حساب الإدارة يستخدم نفس شاشة الدخول، والصلاحيات تتحدد تلقائيًا من قاعدة البيانات.</div>`;
+        <div class="login-hint">${isAdminPortal ? "هذه الصفحة مخصصة لإدارة المركز فقط." : "حساب المريض ينشئه المركز، ولا يمكن إنشاء حساب جديد من هذه الصفحة."}</div>`;
 
-    return `<main class="entry ps-entry"><section class="entry-brand ps-entry-brand">${brand()}<div class="entry-copy"><span class="eyebrow" style="color:#8ee7d9">بوابة برفكت سكان الرقمية</span><h1>فحصك وتقريرك،<br><em>في رحلة واحدة.</em></h1><p>احجز فحص الأشعة في فرع الصوالحة أو عرابي، تابع موعدك، واستلم التقرير والصور من حسابك بأمان.</p></div><div class="entry-scan-orbit" aria-hidden="true"><span></span><i></i></div><div class="privacy-note">${ICONS.file}<span>بيانات كل مريض معزولة بحسابه وصلاحياته</span></div></section><section class="entry-panel"><div class="login-box"><span class="eyebrow">بوابة المرضى والإدارة</span><h2>${setupError ? "خطوة إعداد أخيرة" : register ? "إنشاء حساب مريض" : "أهلاً بيك في Perfect Scan"}</h2><p class="muted">${setupError ? "المشروع متصل بـSupabase بنجاح." : register ? "اكتب بياناتك الأساسية، وبعد تأكيد البريد تقدر تدخل للنظام." : "ادخل بحسابك لمتابعة الحجوزات والتقارير."}</p>${form}</div></section></main>`;
+    return `<main class="entry ps-entry"><section class="entry-brand ps-entry-brand">${brand()}<div class="entry-copy"><span class="eyebrow" style="color:#8ee7d9">${isAdminPortal ? "نظام إدارة برفكت سكان" : "بوابة برفكت سكان الرقمية"}</span><h1>${isAdminPortal ? "إدارة المركز،<br><em>من مكان واحد.</em>" : "فحصك وتقريرك،<br><em>في رحلة واحدة.</em>"}</h1><p>${isAdminPortal ? "تابعي المرضى والحجوزات، وارفعي تقارير الأشعة بأمان لكل مريض." : "احجز فحص الأشعة في فرع الصوالحة أو عرابي، تابع موعدك، واستلم التقرير والصور من حسابك بأمان."}</p></div><div class="entry-scan-orbit" aria-hidden="true"><span></span><i></i></div><div class="privacy-note">${ICONS.file}<span>${isAdminPortal ? "الدخول متاح للحسابات الإدارية المعتمدة فقط" : "بيانات كل مريض معزولة بحسابه وصلاحياته"}</span></div></section><section class="entry-panel"><div class="login-box"><span class="eyebrow">${isAdminPortal ? "بوابة الإدارة" : "بوابة المريض"}</span><h2>${setupError ? "خطوة إعداد أخيرة" : isAdminPortal ? "دخول إدارة Perfect Scan" : "أهلاً بيك في Perfect Scan"}</h2><p class="muted">${setupError ? "المشروع متصل بـSupabase بنجاح." : isAdminPortal ? "ادخلي بحساب الإدارة لفتح لوحة التحكم." : "ادخل بحسابك لمتابعة الحجوزات والتقارير."}</p>${form}</div></section></main>`;
   };
 
   shell = function () {
@@ -336,28 +334,6 @@
     state.busy = true;
     state.authMessage = "";
     render();
-    if (state.authMode === "register") {
-      const { data: result, error } = await client.auth.signUp({
-        email: data.get("email"),
-        password: data.get("password"),
-        options: {
-          emailRedirectTo: `${window.location.origin}${window.location.pathname}`,
-          data: { full_name: data.get("full_name"), phone: data.get("phone") }
-        }
-      });
-      state.busy = false;
-      if (error) {
-        state.authMessage = authErrorMessage(error);
-        return render();
-      }
-      if (!result.session) {
-        state.authMode = "login";
-        state.authMessage = "تم إنشاء الحساب. افتحي رسالة التأكيد في بريدك، وبعدها سجلي الدخول.";
-        return render();
-      }
-      await hydrate(result.session);
-      return;
-    }
     const { data: result, error } = await client.auth.signInWithPassword({
       email: data.get("email"),
       password: data.get("password")
@@ -408,6 +384,25 @@
     state.loading = true;
     render();
     await loadData();
+    if (state.role && state.role !== portalType) {
+      const attemptedRole = state.role;
+      await client.auth.signOut();
+      Object.assign(state, {
+        session: null,
+        profile: null,
+        role: null,
+        appointments: [],
+        reports: [],
+        patients: [],
+        loading: false,
+        mustChangePassword: false,
+        authMessage: attemptedRole === "admin"
+          ? "ده حساب إدارة. استخدمي صفحة دخول الإدارة."
+          : "هذه الصفحة للإدارة فقط. استخدم صفحة دخول المريض."
+      });
+      render();
+      return;
+    }
     state.loading = false;
     render();
   }
@@ -458,11 +453,6 @@
   }
 
   bindEvents = function () {
-    document.querySelectorAll("[data-auth-mode]").forEach(button => button.onclick = () => {
-      state.authMode = button.dataset.authMode;
-      state.authMessage = "";
-      render();
-    });
     document.getElementById("auth-form")?.addEventListener("submit", handleAuth);
     document.getElementById("change-password-form")?.addEventListener("submit", changeTemporaryPassword);
     document.getElementById("logout-button")?.addEventListener("click", logout);
