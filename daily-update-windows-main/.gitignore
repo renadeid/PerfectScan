@@ -1,0 +1,24 @@
+# Dependencies & build
+node_modules/
+dist/
+*.asar
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# User settings (local only)
+.daily-update-windows/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Agent run artifacts
+.tifo/
